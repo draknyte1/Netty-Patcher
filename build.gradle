@@ -1,0 +1,151 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+		jcenter()
+		maven {
+			name = "gt"
+			url = "https://gregtech.overminddl1.com/"
+		}	
+        maven {
+            name = "sonatype"
+            url = "https://oss.sonatype.org/content/repositories/snapshots/"
+        }
+		maven {
+			url = "https://plugins.gradle.org/m2/"
+		}
+    }
+    dependencies {
+        classpath "net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT"
+    }
+}
+
+// Because Forge is too stupid to fix Deprecation Issues, and we cannot fix it on our end! (until we fork Forge)
+allprojects {
+	tasks.withType(Javadoc) {
+		//options.compilerArgs << "-Xlint:deprecation"
+		options.addStringOption('Xdoclint:none', '-quiet')
+	}
+}
+
+apply plugin: 'eclipse'
+eclipse {
+	classpath {
+		downloadJavadoc = true
+		downloadSources = true
+	}
+}
+
+apply plugin: 'idea'
+idea{
+	module {
+		downloadJavadoc = true
+		downloadSources = true
+	}
+}
+
+apply plugin: 'forge'
+
+file "build.properties" withReader {
+    def prop = new Properties()
+    prop.load(it)
+    ext.config = new ConfigSlurper().parse prop
+}
+
+version = "${config.np.version}"
+group= "net.laurus.nettyfix"
+archivesBaseName = "NettyPatcher"
+
+//Java Version
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+//Compile against UTF-8
+compileTestJava.options.encoding = 'UTF-8'
+javadoc.options.encoding = 'UTF-8'
+compileJava.options.encoding = 'UTF-8'
+
+minecraft {
+    version = "1.7.10-10.13.4.1614-1.7.10"
+    runDir = "eclipse"
+}
+
+idea { module { inheritOutputDirs = true } }
+
+configurations {
+    provided
+    embedded
+    compile.extendsFrom provided, embedded
+}
+
+repositories {
+	maven {
+		name = "gt"
+		url = "http://gregtech.overminddl1.com/"
+	}
+}
+
+sourceSets {
+    main {
+        java { srcDirs = ["$projectDir/src/main/java"] }
+        resources { srcDirs = ["$projectDir/src/main/resources"] }
+    }
+}
+
+dependencies {	
+	
+}
+
+processResources
+{
+    // this will ensure that this task is redone when the versions change.
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+
+    // replace stuff in mcmod.info, nothing else
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+                
+        // replace version and mcversion
+        expand 'version':project.version, 'mcversion':project.minecraft.version
+    }
+        
+    // copy everything else, thats not the mcmod.info
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+	exclude '**/Thumbs.db'
+}
+
+jar {
+    archiveName = archivesBaseName + "-" + version + ".jar"
+    manifest {
+
+    }
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allSource
+    classifier = 'sources'
+}
+
+task devJar(type: Jar) {
+    from sourceSets.main.output
+    classifier = 'dev'
+    manifest {
+        attributes 'FMLCorePlugin': 'net.laurus.nettyfix.asm.NP_CORE_FMLLoadingPlugin'
+        attributes 'FMLCorePluginContainsFMLMod': 'true'
+    }
+}
+
+jar {
+    manifest {
+        attributes 'FMLCorePlugin': 'net.laurus.nettyfix.asm.NP_CORE_FMLLoadingPlugin'
+        attributes 'FMLCorePluginContainsFMLMod': 'true'
+    }
+}
+
+artifacts {
+    archives devJar
+    archives sourceJar
+}
