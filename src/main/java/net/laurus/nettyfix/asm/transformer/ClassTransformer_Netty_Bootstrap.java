@@ -35,7 +35,7 @@ public class ClassTransformer_Netty_Bootstrap {
 		if (aFoundMethod) {
 			log("Transforming "+transformedName);
 			injectMethod(writer);		
-			Logger.ASM("Found method \"checkAddress\", your version of Netty *IS* susceptible to MC-108343, this has been patched.");	
+			log("Found method \"checkAddress\", your version of Netty *IS* susceptible to MC-108343, this has been patched.");	
 		}	
 		else {
 			//Logger.ASM("Unable to find method \"checkAddress\", your version of Netty is not susceptible to MC-108343.");
